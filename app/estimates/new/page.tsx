@@ -1,9 +1,21 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Sidebar from "../../../components/Sidebar";
 
+type SavedEstimate = {
+  id: string;
+  job: string;
+  estimate: string;
+  status: string;
+  date: string;
+};
+
 export default function NewEstimatePage() {
+  const router = useRouter();
+
   const [jobDescription, setJobDescription] = useState("");
   const [estimate, setEstimate] = useState("");
   const [error, setError] = useState("");
@@ -45,12 +57,45 @@ export default function NewEstimatePage() {
     }
   }
 
+  function saveEstimate() {
+    if (!estimate) {
+      setError("Generate an estimate before saving.");
+      return;
+    }
+
+    const savedEstimate: SavedEstimate = {
+      id: crypto.randomUUID(),
+      job: jobDescription,
+      estimate,
+      status: "Draft",
+      date: new Date().toLocaleDateString(),
+    };
+
+    const existingEstimates = JSON.parse(
+      localStorage.getItem("sidekick-estimates") || "[]"
+    );
+
+    localStorage.setItem(
+      "sidekick-estimates",
+      JSON.stringify([savedEstimate, ...existingEstimates])
+    );
+
+    router.push("/estimates");
+  }
+
   return (
     <main className="flex min-h-screen bg-slate-950">
       <Sidebar />
 
       <section className="flex-1 p-10 text-white">
-        <h1 className="text-4xl font-bold">New Estimate</h1>
+        <Link
+          href="/estimates"
+          className="text-sm text-slate-400 hover:text-white"
+        >
+          ← Back to estimates
+        </Link>
+
+        <h1 className="mt-6 text-4xl font-bold">New Estimate</h1>
 
         <p className="mt-3 text-slate-400">
           Describe the project and Sidekick will create a preliminary estimate.
@@ -87,6 +132,13 @@ export default function NewEstimatePage() {
               <pre className="whitespace-pre-wrap font-sans leading-7">
                 {estimate}
               </pre>
+
+              <button
+                onClick={saveEstimate}
+                className="mt-8 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-700"
+              >
+                Save Estimate
+              </button>
             </div>
           )}
         </div>
