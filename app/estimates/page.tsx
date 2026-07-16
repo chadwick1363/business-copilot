@@ -1,93 +1,105 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 
+const estimates = [
+  {
+    customer: "John Smith",
+    job: "Water Heater Replacement",
+    status: "Pending",
+    total: "$1,895",
+    date: "Jul 16, 2026",
+  },
+  {
+    customer: "Sarah Jones",
+    job: "Kitchen Remodel",
+    status: "Sent",
+    total: "$12,400",
+    date: "Jul 15, 2026",
+  },
+  {
+    customer: "Mike Davis",
+    job: "Electrical Panel Upgrade",
+    status: "Draft",
+    total: "$3,650",
+    date: "Jul 14, 2026",
+  },
+];
+
 export default function EstimatesPage() {
-  const [jobDescription, setJobDescription] = useState("");
-  const [estimate, setEstimate] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
-  async function generateEstimate() {
-    setError("");
-    setEstimate("");
-
-    if (!jobDescription.trim()) {
-      setError("Describe the job before generating an estimate.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await fetch("/api/estimates", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ jobDescription }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong.");
-      }
-
-      setEstimate(data.estimate);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Something went wrong."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }
+  const filteredEstimates = estimates.filter((estimate) => {
+    const text = `${estimate.customer} ${estimate.job} ${estimate.status}`.toLowerCase();
+    return text.includes(search.toLowerCase());
+  });
 
   return (
     <main className="flex min-h-screen bg-slate-950">
       <Sidebar />
 
       <section className="flex-1 p-10 text-white">
-        <h1 className="text-4xl font-bold">AI Estimate Generator</h1>
-
-        <p className="mt-3 text-slate-400">
-          Describe the customer’s project and Sidekick will create a
-          preliminary estimate.
-        </p>
-
-        <div className="mt-10 max-w-4xl">
-          <textarea
-            value={jobDescription}
-            onChange={(event) => setJobDescription(event.target.value)}
-            className="h-48 w-full rounded-xl border border-slate-700 bg-slate-900 p-5 text-white outline-none focus:border-blue-500"
-            placeholder="Example: Replace a 50-gallon electric water heater and remove the old unit."
-          />
-
-          <button
-            onClick={generateEstimate}
-            disabled={isLoading}
-            className="mt-6 rounded-xl bg-blue-600 px-8 py-4 font-bold transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isLoading ? "Generating..." : "Generate Estimate"}
-          </button>
-
-          {error && (
-            <p className="mt-5 rounded-lg border border-red-800 bg-red-950 p-4 text-red-200">
-              {error}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold">Estimates</h1>
+            <p className="mt-2 text-slate-400">
+              Create, review, and manage customer estimates.
             </p>
-          )}
+          </div>
 
-          {estimate && (
-            <div className="mt-8 rounded-xl bg-white p-8 text-black">
-              <h2 className="mb-5 text-2xl font-bold">
-                Preliminary Estimate
-              </h2>
+          <Link
+            href="/estimates/new"
+            className="rounded-xl bg-blue-600 px-5 py-3 font-semibold transition hover:bg-blue-700"
+          >
+            + New Estimate
+          </Link>
+        </div>
 
-              <pre className="whitespace-pre-wrap font-sans leading-7">
-                {estimate}
-              </pre>
+        <div className="mt-8">
+          <input
+            type="text"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search estimates..."
+            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-white outline-none focus:border-blue-500"
+          />
+        </div>
+
+        <div className="mt-8 space-y-4">
+          {filteredEstimates.map((estimate) => (
+            <div
+              key={`${estimate.customer}-${estimate.job}`}
+              className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:border-slate-700"
+            >
+              <div>
+                <h2 className="text-xl font-semibold">{estimate.customer}</h2>
+                <p className="mt-1 text-slate-400">{estimate.job}</p>
+                <p className="mt-2 text-sm text-slate-500">{estimate.date}</p>
+              </div>
+
+              <div className="text-right">
+                <p className="text-2xl font-bold">{estimate.total}</p>
+
+                <span
+                  className={`mt-3 inline-block rounded-full px-3 py-1 text-sm font-medium ${
+                    estimate.status === "Sent"
+                      ? "bg-emerald-500/15 text-emerald-300"
+                      : estimate.status === "Pending"
+                      ? "bg-amber-500/15 text-amber-300"
+                      : "bg-slate-700 text-slate-300"
+                  }`}
+                >
+                  {estimate.status}
+                </span>
+              </div>
+            </div>
+          ))}
+
+          {filteredEstimates.length === 0 && (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center text-slate-400">
+              No estimates found.
             </div>
           )}
         </div>
